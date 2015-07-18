@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
     <head>
-        <title>ACE in Action</title>
+        <title>JsFiddle - Clone</title>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
         <style type="text/css" media="screen">
@@ -16,21 +16,41 @@
                 border: none;
             }
         </style>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+        <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.min.js"></script>
+        <script id='poo' src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
     </head>
     <body>
-        <div id="editor" style="width:50%; height:100%;">&lt;h1&gt; Hello &lt;/h1&gt;</div>
+        <div id="editor" style="width:50%; height:100%;">&lt;style&gt;
+    /* css... */
+&lt;/style&gt;
+
+&lt;h1&gt; Example Header &lt;/h1&gt;
+
+&lt;script&gt;
+    // javascript...
+&lt;/script&gt;</div>
         <div style="position:absolute; top:0px; right:0px; width: 50%; height: 100%;">
             <iframe id="target" style="position:absolute; top:0px; right:0px; width: 100%; height: 100%;"></iframe>
+            <div style="position: relative; width: 100%; height: 100%;">
+                <!-- <button id="libraryChooser" class="btn btn-success" style="z-index:1000; position:absolute; bottom:0; right:0; width:100%;">Add Library</button> -->
+            </div>
         </div>
-        <button onclick="runJavaScript()" class="btn btn-primary" style="z-index:1000; position:absolute; bottom:0; left:0; width:50%;">Run Javascript</button>
-
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.2.0/ace.js"></script>
+        <!-- <button onclick="runJavaScript()" class="btn btn-primary" style="z-index:1000; position:absolute; bottom:0; left:0; width:50%;">Run Javascript</button> -->
+        <div class="btn-group" role="group" aria-label="..." style="z-index:1000; position:absolute; bottom:0; right:0; width:100%;">
+            <button type="button" class="btn btn-primary" onclick="runJavaScript()" style="z-index:1001;width:50%;">Run Javascript</button>
+            <button type="button" class="btn btn-info" id="libraryChooser" style="z-index:1001;width:50%;">Add Library</button>
+        </div>
         <script>
+            var fileref = document.createElement('script');
+            fileref.setAttribute("src", 'bootbox.min.js');
+            document.getElementsByTagName("head")[0].appendChild(fileref)
             var iFrame = document.getElementById('target');
             var iFrameBody;
+            var libjs = false,
+                lodashjs = false;
 
             window.onload = function () {
-                console.log('load');
                 if ( iFrame.contentDocument ) {
                     iFrameBody = iFrame.contentDocument.getElementsByTagName('body')[0];
                 }
@@ -59,21 +79,53 @@
                 var output = '';
                 for (var l = 0; l < editor.session.getDocument().$lines.length; l++) {
                     output += editor.session.getDocument().$lines[l];
-                    // output += '\n';
                 }
                 iFrameBody.innerHTML = output;
             });
 
             function runJavaScript () {
-                var script = '';
-                var scriptRE = iFrameBody.innerHTML.match("<script>(.*)<\/script>");
-                if (scriptRE) {
-                    script = 'var document = iFrame.contentDocument;' + scriptRE[1];
-                    // console.log(scriptRE[1]);
-                    // console.log(script);
-                    eval(script);
+                var scriptInnerHtmls = [],
+                    jsDeclarations = 'var document = iFrame.contentDocument;',
+                    scriptForEval = '';
+
+                for (var a = 0; a < iFrame.contentDocument.getElementsByTagName("script").length; a++) {  // fore every script tag in iFrame
+                    if (iFrame.contentDocument.getElementsByTagName("script")[a].innerHTML)
+                        scriptInnerHtmls[a] = iFrame.contentDocument.getElementsByTagName("script")[a].innerHTML;
+                    else
+                        scriptInnerHtmls[a] = null;
                 }
+
+                scriptForEval += jsDeclarations + '\n';
+
+                for (var i = 0; i < scriptInnerHtmls.length; i++) {
+                    if (scriptInnerHtmls[i])
+                        scriptForEval += scriptInnerHtmls[i] + '\n';
+                }
+                eval(scriptForEval);
             }
+
+            function addScript (script) {
+                var file = document.createElement('script');
+                file.setAttribute("src", script);
+                document.getElementsByTagName("head")[0].appendChild(file);
+            }
+
+            document.getElementById('libraryChooser').addEventListener('click', function(e) {
+                var libjs_class = libjs ? 'list-group-item-success' : '';
+                var lodashjs_class = lodashjs ? 'list-group-item-success' : '';
+                bootbox.dialog({
+                    title: "Add a Javascript Library",
+                    message:
+                        '<div class="row">  ' +
+                            '<div class="col-md-12"> ' +
+                                '<div class="list-group">' +
+                                    '<button onclick="addScript(\'libs.js\');libjs=true;" class="list-group-item ' + libjs_class + '">libs.js</button>'+
+                                    '<button onclick="addScript(\'lodash.min.js\');lodashjs=true;" class="list-group-item ' + lodashjs_class + '">lodash.min.js</button>'+
+                                '</div>   ' +
+                            '</div>' +
+                        '</div>'
+                });
+            });
         </script>
     </body>
 </html>
